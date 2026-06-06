@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Wrap — Card Game</title>
+<style>
+  :root {
+    --bg:#0f1117;--bg2:#1a1d27;--bg3:#22263a;
+    --border:#2e3248;--border2:#3d4260;
+    --text:#e8eaf6;--text2:#9198b8;--text3:#5a6080;
+    --blue:#4f8ef7;--blue-bg:#0d2040;--blue-border:#1e3f6e;
+    --green:#4caf7d;--green-bg:#0a2a1a;--green-border:#1a4f30;
+    --yellow:#f0c040;--yellow-bg:#2a2000;--yellow-border:#4a3800;
+    --red:#e05555;--red-bg:#2a0a0a;--red-border:#5a1a1a;
+    --card-red:#e05555;--card-black:#e8eaf6;
+    --radius:10px;--radius-sm:6px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100dvh;}
+  #app{max-width:480px;margin:0 auto;padding:1rem;min-height:100dvh;}
+  .screen{display:none;}.screen.active{display:block;}
+  h1{font-size:22px;font-weight:700;margin-bottom:4px;}
+  h2{font-size:18px;font-weight:600;margin-bottom:.75rem;}
+  h3{font-size:14px;font-weight:600;color:var(--text2);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em;}
+  p{font-size:14px;color:var(--text2);line-height:1.6;}
+  .subtitle{font-size:13px;color:var(--text3);margin-top:2px;}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text);padding:10px 18px;border-radius:var(--radius-sm);font-size:14px;font-weight:500;font-family:inherit;transition:all .15s;user-select:none;}
+  .btn:hover{background:var(--bg2);}.btn:active{transform:scale(.97);}
+  .btn-primary{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-border);}
+  .btn-primary:hover{background:#0f2850;}
+  .btn-success{background:var(--green-bg);color:var(--green);border-color:var(--green-border);}
+  .btn-danger{background:var(--red-bg);color:var(--red);border-color:var(--red-border);}
+  .btn-warn{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow-border);}
+  .btn-full{width:100%;}.btn:disabled{opacity:.35;cursor:not-allowed;transform:none;}
+  input[type=text],select{width:100%;background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:var(--radius-sm);padding:10px 12px;font-size:15px;font-family:inherit;outline:none;}
+  input[type=text]:focus,select:focus{border-color:var(--blue);}
+  input[type=text]::placeholder{color:var(--text3);}
+  select option{background:var(--bg3);}
+  .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:.75rem;}
+  .badge{display:inline-flex;align-items:center;font-size:12px;font-weight:500;padding:3px 10px;border-radius:20px;border:1px solid;white-space:nowrap;}
+  .badge-blue{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-border);}
+  .badge-green{background:var(--green-bg);color:var(--green);border-color:var(--green-border);}
+  .badge-yellow{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow-border);}
+  .badge-red{background:var(--red-bg);color:var(--red);border-color:var(--red-border);}
+  .badge-gray{background:var(--bg3);color:var(--text2);border-color:var(--border);}
+  .info-bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:.75rem;}
+  .notice{border-radius:var(--radius-sm);padding:8px 12px;font-size:13px;border:1px solid;margin-bottom:.5rem;}
+  .notice-warn{background:var(--yellow-bg);color:var(--yellow);border-color:var(--yellow-border);}
+  .notice-danger{background:var(--red-bg);color:var(--red);border-color:var(--red-border);}
+  .notice-green{background:var(--green-bg);color:var(--green);border-color:var(--green-border);}
+  .notice-blue{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-border);}
+  .divider{border:none;border-top:1px solid var(--border);margin:.75rem 0;}
+  .msg{font-size:13px;color:var(--text2);margin-top:.5rem;min-height:18px;}
+  .action-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:.75rem;}
+  .card-grid{display:flex;flex-wrap:wrap;gap:5px;min-height:82px;}
+  .playing-card{width:48px;height:70px;border:1.5px solid #3a3f5a;border-radius:6px;background:#1e2235;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;user-select:none;position:relative;transition:transform .12s,border-color .12s,background .12s;touch-action:manipulation;flex-shrink:0;}
+  .playing-card .c-rank{font-size:12px;font-weight:700;line-height:1;}
+  .playing-card .c-suit{font-size:16px;line-height:1.1;}
+  .playing-card.red{color:var(--card-red);}.playing-card.black{color:var(--card-black);}
+  .playing-card:hover{transform:translateY(-4px);}
+  .playing-card.selected{transform:translateY(-12px);border-color:var(--blue);background:var(--blue-bg);}
+  .playing-card.zero{border-color:var(--green);}
+  .playing-card.zero .c-rank,.playing-card.zero .c-suit{color:var(--green);}
+  .playing-card.locked-card{border-color:var(--red-border);opacity:.5;cursor:not-allowed;}
+  .playing-card.locked-card:hover{transform:none;}
+  .playing-card.drag-over{border-color:var(--yellow);border-style:dashed;}
+  .playing-card.dragging{opacity:.3;transform:none!important;}
+  .playing-card.face-down{background:#185FA5;border-color:#0d3d6e;cursor:default;}
+  .playing-card.face-down:hover{transform:none;}
+  .pile-row{display:flex;gap:14px;align-items:flex-start;margin:.75rem 0;}
+  .pile-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;}
+  .pile-label{font-size:11px;color:var(--text3);}
+  .pile-slot{width:48px;height:70px;border:1.5px dashed var(--border2);border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;color:var(--text3);cursor:pointer;}
+  .pile-slot.draw{background:#185FA5;border-color:#0d3d6e;color:white;font-weight:600;}
+  .pile-slot.draw:hover{background:#0f4a8a;}
+  .pile-slot.has-card{border-style:solid;border-color:var(--border2);}
+  .pile-slot.has-card:hover{border-color:var(--blue);}
+  .sort-bar{display:flex;gap:5px;align-items:center;flex-wrap:wrap;margin-bottom:4px;}
+  .sort-btn{font-size:11px;padding:4px 9px;}
+  .score-preview{font-size:12px;color:var(--text3);margin-bottom:4px;min-height:16px;}
+  .player-list{list-style:none;display:flex;flex-direction:column;gap:6px;}
+  .player-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;}
+  .player-item .dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+  .player-item .dot.ready{background:var(--green);}
+  .room-code{font-size:48px;font-weight:800;letter-spacing:.2em;color:var(--blue);text-align:center;padding:1rem 0;}
+  .score-table{width:100%;border-collapse:collapse;font-size:14px;}
+  .score-table th{text-align:left;padding:8px;font-weight:600;font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);}
+  .score-table td{padding:8px;border-bottom:1px solid var(--border);}
+  .score-table tr.winner td{color:var(--green);background:var(--green-bg);}
+  .score-table tr.loser td{color:var(--red);background:var(--red-bg);}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;overflow-y:auto;padding:1rem;}
+  .modal-overlay.open{display:flex;align-items:flex-start;justify-content:center;}
+  .modal-box{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:1.25rem;width:100%;max-width:460px;margin:auto;}
+  .dc-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+  .dc-col h3{margin-bottom:6px;}.dc-col .card-grid{min-height:40px;}
+  .waiting{text-align:center;padding:3rem 1rem;}
+  .waiting .spinner{width:36px;height:36px;border:3px solid var(--border2);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 1rem;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .others-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:.75rem;}
+  .other-player{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:5px 10px;font-size:12px;display:flex;align-items:center;gap:6px;}
+  .lives-display{display:flex;gap:4px;align-items:center;}
+  .life-dot{width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block;}
+  .life-dot.lost{background:var(--border2);}
+  .center{text-align:center;}.mt1{margin-top:1rem;}.mb1{margin-bottom:1rem;}
+  .gap{display:flex;flex-direction:column;gap:.5rem;}
+  .setup-section{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:.75rem;}
+  .setup-section h3{margin-bottom:.75rem;}
+  .mode-btn{display:flex;flex-direction:column;align-items:flex-start;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:var(--bg3);cursor:pointer;transition:all .15s;width:100%;text-align:left;font-family:inherit;}
+  .mode-btn:hover{border-color:var(--border2);background:var(--bg2);}
+  .mode-btn.selected{border-color:var(--blue);background:var(--blue-bg);}
+  .mode-btn .mode-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px;}
+  .mode-btn .mode-desc{font-size:12px;color:var(--text2);}
+  .back-link{font-size:13px;color:var(--text3);text-decoration:none;display:inline-flex;align-items:center;gap:4px;margin-bottom:1rem;}
+  .back-link:hover{color:var(--text2);}
+  .spectator-notice{background:var(--yellow-bg);border:1px solid var(--yellow-border);color:var(--yellow);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-bottom:1rem;}
+</style>
+</head>
+<body>
+<div id="app">
+
+<div id="s-home" class="screen active">
+  <div style="padding-top:1.5rem">
+    <a href="index.html" class="back-link">← All games</a>
+    <h1>Wrap</h1>
+    <p class="subtitle mb1">A Rummy-style card game</p>
+    <div class="gap mt1">
+      <button class="btn btn-primary btn-full" onclick="showScreen('s-setup')">New game</button>
+      <button class="btn btn-full" onclick="showScreen('s-join')">Join game</button>
+    </div>
+  </div>
+</div>
+
+<div id="s-setup" class="screen">
+  <a href="#" class="back-link" onclick="showScreen('s-home');return false;">← Back</a>
+  <h2>Game setup</h2>
+  <div class="setup-section">
+    <h3>Your name</h3>
+    <input type="text" id="create-name" placeholder="Enter your name" maxlength="20">
+  </div>
+  <div class="setup-section">
+    <h3>Game mode</h3>
+    <div class="gap">
+      <button class="mode-btn selected" id="mode-rounds" onclick="selectMode('rounds')">
+        <span class="mode-title">Rounds</span>
+        <span class="mode-desc">Play individual games. Lowest score wins each round.</span>
+      </button>
+      <button class="mode-btn" id="mode-lives" onclick="selectMode('lives')">
+        <span class="mode-title">3 Lives</span>
+        <span class="mode-desc">Each player has 3 lives. Highest scorer loses a life. Last one standing wins.</span>
+      </button>
+    </div>
+  </div>
+  <div class="setup-section">
+    <h3>Players (2–6)</h3>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:.75rem">
+      <button class="btn" onclick="adjustPlayers(-1)">−</button>
+      <span id="player-count" style="font-size:18px;font-weight:700;min-width:24px;text-align:center">3</span>
+      <button class="btn" onclick="adjustPlayers(1)">+</button>
+    </div>
+    <div id="bot-slots" class="gap"></div>
+  </div>
+  <div class="setup-section" id="bot-difficulty-wrap" style="display:none">
+    <h3>Bot difficulty</h3>
+    <select id="bot-difficulty">
+      <option value="easy">Easy</option>
+      <option value="medium" selected>Medium</option>
+      <option value="hard">Hard</option>
+    </select>
+  </div>
+  <button class="btn btn-primary btn-full" onclick="createGame()" style="margin-top:.5rem">Create &amp; get room code</button>
+</div>
+
+<div id="s-join" class="screen">
+  <a href="#" class="back-link" onclick="showScreen('s-home');return false;">← Back</a>
+  <h2>Join game</h2>
+  <div class="gap">
+    <div>
+      <p style="margin-bottom:6px;font-size:13px;color:var(--text2)">Your name</p>
+      <input type="text" id="join-name" placeholder="Enter your name" maxlength="20">
+    </div>
+    <div>
+      <p style="margin-bottom:6px;font-size:13px;color:var(--text2)">Room code</p>
+      <input type="text" id="join-code" placeholder="4-letter code" maxlength="4" style="text-transform:uppercase;font-size:20px;letter-spacing:.15em;font-weight:700">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="joinGame()">Join game</button>
+  </div>
+</div>
+
+<div id="s-lobby" class="screen">
+  <h2>Waiting for players</h2>
+  <div class="room-code" id="lobby-code"></div>
+  <p class="center" style="margin-bottom:1rem;font-size:13px">Share this code with friends</p>
+  <ul class="player-list" id="lobby-players"></ul>
+  <div class="mt1" id="lobby-start-wrap" style="display:none">
+    <button class="btn btn-success btn-full" onclick="startGame()">Start game</button>
+  </div>
+  <p class="msg center" id="lobby-msg"></p>
+</div>
+
+<div id="s-waiting" class="screen">
+  <div class="waiting">
+    <div class="spinner"></div>
+    <h2 id="waiting-title">Waiting...</h2>
+    <p id="waiting-msg"></p>
+    <div id="waiting-locks-wrap" style="margin-top:1.5rem;display:none">
+      <button class="btn btn-danger btn-full" id="waiting-locks-btn" onclick="callLocksFromWaiting()">🔒 Call Locks</button>
+      <p class="msg center" id="waiting-locks-msg"></p>
+    </div>
+  </div>
+  <div id="others-hands" style="margin-top:1rem"></div>
+</div>
+
+<div id="s-spectator" class="screen">
+  <div class="spectator-notice">👁 You've been eliminated. You can watch the remaining cards but cannot see players' hands.</div>
+  <h2 id="spectator-title">Game in progress</h2>
+  <p id="spectator-msg" style="margin-bottom:1rem"></p>
+  <div class="pile-row" id="spectator-piles"></div>
+  <div id="spectator-lives" style="margin-top:1rem"></div>
+</div>
+
+<div id="s-empty-deck" class="screen">
+  <div style="padding-top:1.5rem">
+    <div class="notice notice-warn" style="margin-bottom:1rem">⚠ The draw pile is empty!</div>
+    <h2 id="empty-deck-title">Your turn</h2>
+    <p id="empty-deck-msg" style="margin-bottom:1.5rem"></p>
+    <div id="empty-deck-discard-display" style="margin-bottom:1rem"></div>
+    <div class="gap">
+      <button class="btn btn-primary btn-full" id="empty-pickup-btn" onclick="emptyDeckPickup()">Pick up the discard</button>
+      <button class="btn btn-danger btn-full" id="empty-end-btn" onclick="emptyDeckEnd()">End the game now</button>
+    </div>
+  </div>
+</div>
+
+<div id="s-post-discard" class="screen">
+  <div class="waiting" style="padding-top:1.5rem">
+    <h2 id="post-discard-title"></h2>
+    <p id="post-discard-msg" style="margin-bottom:1.5rem"></p>
+    <div class="gap">
+      <button class="btn btn-warn btn-full" id="post-wrap-btn" onclick="callWrapPostDiscard()">Call Wrap</button>
+      <button class="btn btn-primary btn-full" onclick="endMyTurn()">Pass to next player</button>
+    </div>
+  </div>
+</div>
+
+<div id="s-play" class="screen">
+  <div class="info-bar" id="info-bar"></div>
+  <div id="notice-wrap" style="display:none" class="notice notice-warn"></div>
+  <div id="locks-notice" style="display:none" class="notice notice-danger">🔒 Locks — no more Deck Checks this game</div>
+  <div id="others-bar" class="others-bar"></div>
+  <div id="phase-label" style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Draw a card</div>
+  <div class="pile-row">
+    <div class="pile-wrap">
+      <div class="pile-slot draw" id="draw-btn" onclick="drawFromDeck()">Draw<br>pile<br><span id="draw-count" style="font-size:10px"></span></div>
+      <span class="pile-label">Deck</span>
+    </div>
+    <div class="pile-wrap">
+      <div class="pile-slot" id="discard-btn" onclick="takeDiscard()"></div>
+      <span class="pile-label">Discard</span>
+    </div>
+    <div style="font-size:13px;color:var(--text2);align-self:center;margin-left:4px" id="draw-hint">Pick a source</div>
+  </div>
+  <div class="divider"></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:4px">
+    <span style="font-size:14px;font-weight:600">Your hand</span>
+    <div class="sort-bar">
+      <button class="btn sort-btn" onclick="sortHand('smart')">Auto</button>
+      <button class="btn sort-btn" onclick="sortHand('suit')">Suit</button>
+      <button class="btn sort-btn" onclick="sortHand('rank')">Rank</button>
+      <span style="font-size:11px;color:var(--text3)">or drag</span>
+    </div>
+  </div>
+  <div id="score-preview" class="score-preview"></div>
+  <div class="card-grid" id="hand-display"></div>
+  <div class="action-row">
+    <button class="btn btn-danger" id="discard-card-btn" disabled onclick="doDiscard()">Discard</button>
+    <button class="btn btn-warn" id="wrap-btn" disabled onclick="callWrap()">Call Wrap</button>
+    <button class="btn" id="dc-btn" onclick="openDeckCheck()">Deck Check</button>
+    <button class="btn btn-danger" id="locks-btn" style="display:none" onclick="callLocks()">Call Locks</button>
+  </div>
+  <p class="msg" id="play-msg"></p>
+</div>
+
+<div id="s-rummy" class="screen">
+  <h2 id="rummy-title"></h2>
+  <p id="rummy-msg" style="margin-bottom:1rem"></p>
+  <div class="card-grid" id="rummy-hand"></div>
+  <div class="mt1" id="rummy-actions"></div>
+</div>
+
+<div id="s-steal" class="screen">
+  <h2 id="steal-title"></h2>
+  <p id="steal-msg" style="margin-bottom:1rem"></p>
+  <div class="card-grid" id="steal-card-display" style="justify-content:center;margin-bottom:1rem"></div>
+  <div class="gap">
+    <button class="btn btn-success btn-full" id="steal-yes-btn" onclick="claimSteal()">Yes — pick it up for Rummy!</button>
+    <button class="btn btn-full" onclick="declineSteal()">No steal</button>
+  </div>
+</div>
+
+<div id="s-reveal" class="screen">
+  <h2>Round over</h2>
+  <p id="reveal-reason" style="margin-bottom:1rem"></p>
+  <div id="reveal-hands"></div>
+  <div id="reveal-deck" style="margin-top:.5rem"></div>
+  <div class="divider"></div>
+  <table class="score-table" id="reveal-scores"></table>
+  <div id="lives-remaining" style="margin-top:1rem;display:none"></div>
+  <div class="action-row mt1" id="reveal-actions"></div>
+</div>
+
+</div>
+
+<div class="modal-overlay" id="dc-modal">
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem">
+      <strong style="font-size:15px">Deck Check — private</strong>
+      <span style="font-size:12px;color:var(--text3)" id="dc-pile-count"></span>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:.75rem">Discard pile (newest first) alongside your hand. Reopen any time this turn.</p>
+    <div class="dc-grid">
+      <div class="dc-col"><h3>Discard pile</h3><div class="card-grid" id="dc-discard-grid"></div></div>
+      <div class="dc-col"><h3>Your hand</h3><div class="card-grid" id="dc-hand-grid"></div></div>
+    </div>
+    <div class="mt1"><button class="btn btn-primary" onclick="closeDeckCheck()">Close — resume turn</button></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, update, onValue, off } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:"AIzaSyAcMw03LEVF5_owTXRR0-VwCT8WOo7WYi0",
+  authDomain:"wrap-c62e4.firebaseapp.com",
+  databaseURL:"https://wrap-c62e4-default-rtdb.firebaseio.com",
+  projectId:"wrap-c62e4",
+  storageBucket:"wrap-c62e4.firebasestorage.app",
+  messagingSenderId:"82766203786",
+  appId:"1:82766203786:web:5a58d1ac7180964e839673"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const SUITS=['♠','♥','♦','♣'];
+const RANKS=['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const RANK_VAL={A:1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,J:10,Q:10,K:10};
+const RANK_ORDER={A:1,'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'10':10,J:11,Q:12,K:13};
+const RED=new Set(['♥','♦']);
+
+let myId=null,myName='',roomCode='',gameRef=null,gameListener=null,lastGame=null;
+let desiredPlayers=3,selectedCard=-1,dragSrcIdx=-1;
+let deckCheckActiveThisTurn=false,wrapCalledThisTurn=false;
+let selectedMode='rounds',botSlots=[],botDifficulty='medium';
+
+// ── Expose globals
+window.showScreen=showScreen;window.adjustPlayers=adjustPlayers;
+window.createGame=createGame;window.joinGame=joinGame;window.startGame=startGame;
+window.drawFromDeck=drawFromDeck;window.takeDiscard=takeDiscard;window.doDiscard=doDiscard;
+window.callWrap=callWrap;window.callWrapPostDiscard=callWrapPostDiscard;window.endMyTurn=endMyTurn;
+window.openDeckCheck=openDeckCheck;window.closeDeckCheck=closeDeckCheck;
+window.callLocks=callLocks;window.callLocksFromWaiting=callLocksFromWaiting;
+window.sortHand=sortHand;window.claimSteal=claimSteal;window.declineSteal=declineSteal;
+window.selectMode=selectMode;window.emptyDeckPickup=emptyDeckPickup;window.emptyDeckEnd=emptyDeckEnd;
+
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+function selectMode(m){
+  selectedMode=m;
+  document.getElementById('mode-rounds').classList.toggle('selected',m==='rounds');
+  document.getElementById('mode-lives').classList.toggle('selected',m==='lives');
+}
+
+function adjustPlayers(d){
+  desiredPlayers=Math.min(6,Math.max(2,desiredPlayers+d));
+  document.getElementById('player-count').textContent=desiredPlayers;
+  renderBotSlots();
+}
+
+function renderBotSlots(){
+  const container=document.getElementById('bot-slots');
+  container.innerHTML='';
+  botSlots=Array(desiredPlayers-1).fill(false);
+  for(let i=1;i<desiredPlayers;i++){
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;align-items:center;gap:10px;';
+    const lbl=document.createElement('label');
+    lbl.style.cssText='font-size:13px;color:var(--text2);flex:1;';
+    lbl.textContent=`Player ${i+1}`;
+    const tog=document.createElement('button');
+    const idx=i-1;
+    tog.className='btn';tog.style.fontSize='12px';tog.style.padding='5px 12px';
+    tog.textContent='Human';
+    tog.onclick=()=>{
+      botSlots[idx]=!botSlots[idx];
+      tog.textContent=botSlots[idx]?'Bot':'Human';
+      tog.className=botSlots[idx]?'btn btn-warn':'btn';
+      const anyBot=botSlots.some(b=>b);
+      document.getElementById('bot-difficulty-wrap').style.display=anyBot?'block':'none';
+    };
+    row.appendChild(lbl);row.appendChild(tog);container.appendChild(row);
+  }
+}
+
+function genCode(){return Array.from({length:4},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random()*23)]).join('');}
+
+function buildDeck(){
+  const d=[];
+  for(const s of SUITS)for(const r of RANKS)d.push({suit:s,rank:r});
+  for(let i=d.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[d[i],d[j]]=[d[j],d[i]];}
+  return d;
+}
+
+function findZeros(hand){
+  const z=new Set(),bySuit={},byRank={};
+  hand.forEach((c,i)=>{(bySuit[c.suit]=bySuit[c.suit]||[]).push(i);(byRank[c.rank]=byRank[c.rank]||[]).push(i);});
+  for(const idxs of Object.values(byRank))if(idxs.length>=3)idxs.forEach(i=>z.add(i));
+  for(const idxs of Object.values(bySuit)){
+    const s=idxs.slice().sort((a,b)=>RANK_ORDER[hand[a].rank]-RANK_ORDER[hand[b].rank]);
+    for(let i=0;i<s.length;i++){
+      let run=[s[i]];
+      for(let k=i+1;k<s.length;k++){if(RANK_ORDER[hand[s[k]].rank]===RANK_ORDER[hand[run[run.length-1]].rank]+1)run.push(s[k]);else break;}
+      if(run.length>=3)run.forEach(i=>z.add(i));
+    }
+  }
+  return z;
+}
+
+function cardScore(hand){const z=findZeros(hand);return hand.reduce((s,c,i)=>s+(z.has(i)?0:RANK_VAL[c.rank]),0);}
+function isRummy(hand){return hand.length>0&&findZeros(hand).size===hand.length;}
+function hasWrapEligibility(hand){return findZeros(hand).size>=3;}
+function canDiscardAfterWrap(hand,idx){return findZeros(hand.filter((_,i)=>i!==idx)).size>=3;}
+
+function smartSort(hand){
+  const byRank={},bySuit={};
+  hand.forEach((c,i)=>{(byRank[c.rank]=byRank[c.rank]||[]).push(i);(bySuit[c.suit]=bySuit[c.suit]||[]).push(i);});
+  const used=new Set(),groups=[];
+  Object.entries(byRank).filter(([,i])=>i.length>=2).sort((a,b)=>b[1].length-a[1].length)
+    .forEach(([,idxs])=>{const g=idxs.filter(i=>!used.has(i));if(g.length>=2){g.forEach(i=>used.add(i));groups.push(g);}});
+  for(const idxs of Object.values(bySuit)){
+    const s=idxs.filter(i=>!used.has(i)).sort((a,b)=>RANK_ORDER[hand[a].rank]-RANK_ORDER[hand[b].rank]);
+    let run=[];
+    s.forEach(i=>{
+      if(!run.length||RANK_ORDER[hand[i].rank]===RANK_ORDER[hand[run[run.length-1]].rank]+1)run.push(i);
+      else{if(run.length>=2){run.forEach(i=>used.add(i));groups.push(run);}run=[i];}
+    });
+    if(run.length>=2){run.forEach(i=>used.add(i));groups.push(run);}
+  }
+  const solo=hand.map((_,i)=>i).filter(i=>!used.has(i)).sort((a,b)=>RANK_VAL[hand[b].rank]-RANK_VAL[hand[a].rank]);
+  return[...groups.flat(),...solo].map(i=>hand[i]);
+}
+function bySuitSort(h){return h.slice().sort((a,b)=>SUITS.indexOf(a.suit)-SUITS.indexOf(b.suit)||RANK_ORDER[a.rank]-RANK_ORDER[b.rank]);}
+function byRankSort(h){return h.slice().sort((a,b)=>RANK_ORDER[a.rank]-RANK_ORDER[b.rank]||SUITS.indexOf(a.suit)-SUITS.indexOf(b.suit));}
+
+function mkCard(c,opts={}){
+  const el=document.createElement('div');
+  el.className='playing-card'+(RED.has(c.suit)?' red':' black')+(opts.zero?' zero':'')+(opts.selected?' selected':'')+(opts.locked?' locked-card':'')+(opts.facedown?' face-down':'');
+  if(!opts.facedown)el.innerHTML=`<span class="c-rank">${c.rank}</span><span class="c-suit">${c.suit}</span>`;
+  return el;
+}
+function mkFaceDown(){const el=document.createElement('div');el.className='playing-card face-down';return el;}
+
+function livesHTML(lives,max=3){
+  let h='<div class="lives-display">';
+  for(let i=0;i<max;i++)h+=`<div class="life-dot${i>=lives?' lost':''}"></div>`;
+  h+='</div>';return h;
+}
+
+// ── Setup
+renderBotSlots();
+
+async function createGame(){
+  const name=document.getElementById('create-name').value.trim();
+  if(!name){alert('Enter your name');return;}
+  myName=name;myId=0;roomCode=genCode();
+  botDifficulty=document.getElementById('bot-difficulty').value;
+
+  const players=[{name,id:0,isBot:false,ready:true}];
+  for(let i=0;i<botSlots.length;i++){
+    if(botSlots[i])players.push({name:`Bot ${i+1}`,id:i+1,isBot:true,ready:true});
+    else players.push({name:`Player ${i+2}`,id:i+1,isBot:false,ready:false});
+  }
+  const realPlayers=players.filter(p=>!p.isBot).length;
+  const allBots=players.filter(p=>p.isBot).length;
+
+  const gameData={
+    code:roomCode,status:'lobby',hostId:0,
+    desiredPlayers,mode:selectedMode,botDifficulty,
+    players,deck:[],discard:[],hands:[],
+    turnCounts:[],currentPlayer:-1,dealer:-1,
+    wrapCalled:false,wrapCaller:-1,wrapTurnsLeft:-1,
+    deckCheckUsed:[],locksActive:false,locksCalled:false,
+    phase:'lobby',lastAction:'',rummy:null,winner:null,
+    lives:selectedMode==='lives'?Array(desiredPlayers).fill(3):null,
+    eliminated:Array(desiredPlayers).fill(false),
+    postDiscardWrapWindow:false,postDiscardPlayer:-1,
+    emptyDeckMode:false,emptyDeckTurnPlayer:-1,
+  };
+
+  gameRef=ref(db,`games/${roomCode}`);
+  await set(gameRef,gameData);
+  document.getElementById('lobby-code').textContent=roomCode;
+  listenToGame();showScreen('s-lobby');
+
+  // If all bots + me, auto-start
+  if(allBots===desiredPlayers-1)setTimeout(()=>startGame(),500);
+}
+
+async function joinGame(){
+  const name=document.getElementById('join-name').value.trim();
+  const code=document.getElementById('join-code').value.trim().toUpperCase();
+  if(!name){alert('Enter your name');return;}
+  if(code.length!==4){alert('Enter the 4-letter room code');return;}
+  gameRef=ref(db,`games/${code}`);
+  const snap=await get(gameRef);
+  if(!snap.exists()){alert('Room not found.');return;}
+  const g=snap.val();
+  if(g.status!=='lobby'){alert('Game already started.');return;}
+  const openSlot=g.players.findIndex(p=>!p.isBot&&!p.ready&&p.id!==0);
+  if(openSlot===-1){alert('Room is full.');return;}
+  myName=name;myId=openSlot;roomCode=code;
+  const players=[...g.players];
+  players[openSlot]={...players[openSlot],name,ready:true};
+  await update(gameRef,{players});
+  document.getElementById('lobby-code').textContent=code;
+  listenToGame();showScreen('s-lobby');
+}
+
+function renderLobby(g){
+  const ul=document.getElementById('lobby-players');
+  ul.innerHTML='';
+  g.players.forEach(p=>{
+    const li=document.createElement('li');li.className='player-item';
+    li.innerHTML=`<div class="dot${p.ready?' ready':''}"></div><span>${p.name}</span>${p.isBot?'<span style="margin-left:auto;font-size:11px;color:var(--text3)">bot</span>':p.id===0?'<span style="margin-left:auto;font-size:11px;color:var(--text3)">host</span>':''}`;
+    ul.appendChild(li);
+  });
+  const allReady=g.players.every(p=>p.ready||p.isBot);
+  document.getElementById('lobby-start-wrap').style.display=(myId===0&&allReady)?'block':'none';
+  document.getElementById('lobby-msg').textContent=allReady?'':`Waiting for players to join...`;
+}
+
+async function startGame(dealerOverride=-1){
+  const snap=await get(gameRef);const g=snap.val();
+  const n=g.players.length;
+  const deck=buildDeck();
+  const hands=Array.from({length:n},()=>[]);
+  for(let r=0;r<7;r++)for(let p=0;p<n;p++)hands[p].push(deck.pop());
+  hands.forEach((h,i)=>{hands[i]=smartSort(h);});
+  const discard=[deck.pop()];
+  let dealer=dealerOverride>=0?dealerOverride:Math.floor(Math.random()*n);
+  let firstPlayer=nextActive(dealer,g.eliminated||Array(n).fill(false),n);
+
+  await update(gameRef,{
+    status:'playing',deck,discard,hands,
+    turnCounts:Array(n).fill(0),
+    currentPlayer:firstPlayer,dealer,
+    wrapCalled:false,wrapCaller:-1,wrapTurnsLeft:-1,
+    deckCheckUsed:Array(n).fill(false),
+    locksActive:false,locksCalled:false,
+    phase:'draw',postDiscardWrapWindow:false,postDiscardPlayer:-1,
+    rummy:null,winner:null,
+    emptyDeckMode:false,emptyDeckTurnPlayer:-1,
+    lastAction:`Game started! ${g.players[firstPlayer].name} goes first.`,
+  });
+}
+
+function nextActive(from,eliminated,n){
+  let next=(from+1)%n;
+  let tries=0;
+  while(eliminated[next]&&tries<n){next=(next+1)%n;tries++;}
+  return next;
+}
+
+function listenToGame(){
+  if(gameListener)off(gameRef,'value',gameListener);
+  gameListener=onValue(gameRef,snap=>{
+    if(!snap.exists())return;
+    const g=snap.val();lastGame=g;
+    handleGameState(g);
+  });
+}
+
+function amEliminated(g){return g.eliminated&&g.eliminated[myId];}
+
+function handleGameState(g){
+  if(g.status==='lobby'){renderLobby(g);return;}
+  if(g.winner!==null||g.status==='gameover'){renderGameOver(g);return;}
+  if(g.rummy&&g.rummy.announced){renderRummyScreen(g);return;}
+  if(g.rummy&&g.rummy.stealPhase){renderStealScreen(g);return;}
+
+  // Spectator
+  if(amEliminated(g)){renderSpectator(g);return;}
+
+  if(g.postDiscardWrapWindow){
+    if(g.postDiscardPlayer===myId)renderPostDiscard(g);
+    else renderWaiting(g,`${g.players[g.postDiscardPlayer].name} is deciding...`);
+    return;
+  }
+
+  if(g.emptyDeckMode){
+    if(g.emptyDeckTurnPlayer===myId)renderEmptyDeckChoice(g);
+    else renderWaiting(g,`${g.players[g.emptyDeckTurnPlayer].name} is deciding whether to pick up or end the game...`);
+    return;
+  }
+
+  if(g.currentPlayer===myId){
+    // Check if it's a bot's turn and we're the host
+    renderPlayScreen(g);
+  } else {
+    renderWaiting(g);
+  }
+
+  // Bot turn handling — host drives bots
+  if(myId===0&&g.players[g.currentPlayer]&&g.players[g.currentPlayer].isBot&&g.status==='playing'){
+    setTimeout(()=>doBotTurn(g),1200);
+  }
+}
+
+// ── Bot AI
+async function doBotTurn(g){
+  const snap=await get(gameRef);const gFresh=snap.val();
+  if(!gFresh||gFresh.status!=='playing')return;
+  if(!gFresh.players[gFresh.currentPlayer]||!gFresh.players[gFresh.currentPlayer].isBot)return;
+  const p=gFresh.currentPlayer;
+  const diff=gFresh.botDifficulty||'medium';
+  const hand=[...gFresh.hands[p]];
+
+  // Empty deck mode
+  if(gFresh.emptyDeckMode&&gFresh.emptyDeckTurnPlayer===p){
+    const score=cardScore(hand);
+    // Hard: end if score is good; easy: random
+    let end=false;
+    if(diff==='easy')end=Math.random()<0.5;
+    else if(diff==='medium')end=score>=20||gFresh.discard.length===0;
+    else end=score>=15||gFresh.discard.length===0;
+    if(end){await endGameReveal(gFresh,'A player ended the game.');return;}
+    // Pick up
+    const discard=[...gFresh.discard];
+    const card=discard.pop();
+    const newHand=smartSort([...hand,card]);
+    const discardIdx=chooseBotDiscard(newHand,diff);
+    const discarded=newHand.splice(discardIdx,1)[0];
+    discard.push(discarded);
+    const turnCounts=[...gFresh.turnCounts];turnCounts[p]++;
+    const nextP=nextActive(p,gFresh.eliminated||Array(gFresh.players.length).fill(false),gFresh.players.length);
+    await update(gameRef,{
+      [`hands/${p}`]:newHand,discard,turnCounts,
+      emptyDeckTurnPlayer:nextP,
+      lastAction:`${gFresh.players[p].name} picked up. ${gFresh.players[nextP].name}'s choice.`,
+    });
+    return;
+  }
+
+  if(gFresh.phase!=='draw')return;
+
+  // Should bot call wrap?
+  const canWrap=!gFresh.wrapCalled&&gFresh.turnCounts[p]>=2&&hasWrapEligibility(hand);
+  const score=cardScore(hand);
+  let callWrapNow=false;
+  if(canWrap){
+    if(diff==='easy')callWrapNow=score<=5&&Math.random()<0.4;
+    else if(diff==='medium')callWrapNow=score<=8;
+    else callWrapNow=score<=12;
+  }
+
+  // Draw
+  const top=gFresh.discard&&gFresh.discard.length?gFresh.discard[gFresh.discard.length-1]:null;
+  let newHand,newDeck=[...gFresh.deck],newDiscard=[...gFresh.discard];
+  let tookDiscard=false;
+
+  if(top&&shouldBotTakeDiscard(hand,top,diff)){
+    newDiscard.pop();newHand=[...hand,top];tookDiscard=true;
+  } else {
+    if(newDeck.length===0){
+      // Empty deck
+      await update(gameRef,{emptyDeckMode:true,emptyDeckTurnPlayer:p,lastAction:`Draw pile is empty!`});
+      return;
+    }
+    newHand=[...hand,newDeck.pop()];
+  }
+
+  if(isRummy(newHand)){
+    await update(gameRef,{
+      deck:newDeck,discard:newDiscard,[`hands/${p}`]:newHand,phase:'rummy',
+      rummy:{player:p,announced:true,auto8:newHand.length===8},
+      lastAction:`${gFresh.players[p].name} has Rummy!`,
+    });return;
+  }
+
+  // Discard
+  const discardIdx=chooseBotDiscard(newHand,diff);
+  const discarded=newHand.splice(discardIdx,1)[0];
+  newDiscard.push(discarded);
+
+  if(isRummy(newHand)){
+    await update(gameRef,{
+      deck:newDeck,discard:newDiscard,[`hands/${p}`]:newHand,phase:'rummy',
+      rummy:{player:p,announced:true,auto8:false},
+      lastAction:`${gFresh.players[p].name} has Rummy!`,
+    });return;
+  }
+
+  const turnCounts=[...gFresh.turnCounts];turnCounts[p]++;
+
+  if(callWrapNow){
+    const wrapTurnsLeft=gFresh.players.filter((_,i)=>!gFresh.eliminated[i]).length;
+    await update(gameRef,{
+      deck:newDeck,discard:newDiscard,[`hands/${p}`]:newHand,turnCounts,
+      wrapCalled:true,wrapCaller:p,wrapTurnsLeft,
+      postDiscardWrapWindow:false,postDiscardPlayer:-1,
+      phase:'draw',
+      lastAction:`${gFresh.players[p].name} called Wrap!`,
+    });
+    await advanceTurn({...gFresh,turnCounts,wrapCalled:true,wrapTurnsLeft});
+    return;
+  }
+
+  // Post discard wrap window — bot never calls wrap post discard for simplicity
+  await update(gameRef,{
+    deck:newDeck,discard:newDiscard,[`hands/${p}`]:newHand,turnCounts,
+    postDiscardWrapWindow:false,postDiscardPlayer:-1,
+    lastAction:`${gFresh.players[p].name} discarded.`,
+  });
+  await advanceTurn({...gFresh,turnCounts});
+}
+
+function shouldBotTakeDiscard(hand,card,diff){
+  const testHand=[...hand,card];
+  const withCard=findZeros(testHand).size;
+  const without=findZeros(hand).size;
+  if(diff==='easy')return withCard>without&&Math.random()<0.6;
+  if(diff==='medium')return withCard>without;
+  return withCard>without||(cardScore(testHand)<cardScore(hand)&&Math.random()<0.4);
+}
+
+function chooseBotDiscard(hand,diff){
+  const zeros=findZeros(hand);
+  const nonZero=hand.map((_,i)=>i).filter(i=>!zeros.has(i));
+  if(nonZero.length===0)return 0;
+  if(diff==='easy'){
+    // Sometimes discard a zero card by mistake
+    if(Math.random()<0.15)return Math.floor(Math.random()*hand.length);
+    return nonZero.reduce((b,i)=>RANK_VAL[hand[i].rank]>RANK_VAL[hand[b].rank]?i:b,nonZero[0]);
+  }
+  return nonZero.reduce((b,i)=>RANK_VAL[hand[i].rank]>RANK_VAL[hand[b].rank]?i:b,nonZero[0]);
+}
+
+// ── Spectator
+function renderSpectator(g){
+  document.getElementById('spectator-title').textContent=g.status==='playing'?'Game in progress':'Game over';
+  document.getElementById('spectator-msg').textContent=g.lastAction||'';
+  const pilesDiv=document.getElementById('spectator-piles');
+  pilesDiv.innerHTML='';
+  // Draw pile count
+  const drawWrap=document.createElement('div');drawWrap.className='pile-wrap';
+  const drawSlot=document.createElement('div');drawSlot.className='pile-slot draw';
+  drawSlot.innerHTML=`Draw<br>pile<br><span style="font-size:10px">${(g.deck||[]).length} left</span>`;
+  drawWrap.appendChild(drawSlot);
+  const dl=document.createElement('span');dl.className='pile-label';dl.textContent='Deck';
+  drawWrap.appendChild(dl);pilesDiv.appendChild(drawWrap);
+  // Discard
+  const discWrap=document.createElement('div');discWrap.className='pile-wrap';
+  const discSlot=document.createElement('div');
+  const top=g.discard&&g.discard.length?g.discard[g.discard.length-1]:null;
+  if(top){
+    discSlot.className='pile-slot has-card';
+    discSlot.style.color=RED.has(top.suit)?'var(--card-red)':'var(--card-black)';
+    discSlot.innerHTML=`<span class="c-rank" style="font-size:13px;font-weight:700">${top.rank}</span><span class="c-suit" style="font-size:18px">${top.suit}</span>`;
+  } else {discSlot.className='pile-slot';discSlot.innerHTML='Empty';}
+  discWrap.appendChild(discSlot);
+  const dl2=document.createElement('span');dl2.className='pile-label';dl2.textContent='Discard';
+  discWrap.appendChild(dl2);pilesDiv.appendChild(discWrap);
+  // Lives
+  if(g.lives){
+    const livesDiv=document.getElementById('spectator-lives');livesDiv.innerHTML='<h3>Lives</h3>';
+    g.players.forEach((p,i)=>{
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:13px;';
+      row.innerHTML=`<span style="min-width:80px;color:${g.eliminated[i]?'var(--text3)':'var(--text)'}">${p.name}${g.eliminated[i]?' (out)':''}</span>${livesHTML(g.lives[i])}`;
+      livesDiv.appendChild(row);
+    });
+  }
+  showScreen('s-spectator');
+}
+
+// ── Waiting
+function renderWaiting(g,overrideMsg=''){
+  const cp=g.players[g.currentPlayer];
+  document.getElementById('waiting-title').textContent=`${cp?cp.name:'...'}'s turn`;
+  document.getElementById('waiting-msg').textContent=overrideMsg||g.lastAction||'';
+  const canLocks=!g.deckCheckUsed[myId]&&!g.locksCalled;
+  document.getElementById('waiting-locks-wrap').style.display=canLocks?'block':'none';
+  document.getElementById('waiting-locks-btn').disabled=false;
+  document.getElementById('waiting-locks-msg').textContent='';
+  const div=document.getElementById('others-hands');div.innerHTML='';
+  g.players.forEach((p,i)=>{
+    if(i===myId)return;
+    const hand=g.hands[i]||[];
+    const row=document.createElement('div');row.style.cssText='margin-bottom:8px';
+    let extra=g.lives?livesHTML(g.lives[i]):'';
+    row.innerHTML=`<p style="font-size:12px;color:var(--text3);margin-bottom:4px;display:flex;align-items:center;gap:8px">${p.name} — ${hand.length} cards ${extra}</p>`;
+    const grid=document.createElement('div');grid.className='card-grid';
+    hand.forEach(()=>grid.appendChild(mkFaceDown()));
+    row.appendChild(grid);div.appendChild(row);
+  });
+  showScreen('s-waiting');
+}
+
+// ── Empty deck choice
+function renderEmptyDeckChoice(g){
+  document.getElementById('empty-deck-title').textContent='Your turn — draw pile is empty!';
+  document.getElementById('empty-deck-msg').textContent='You can pick up the top discard and play your turn, or end the game now.';
+  const top=g.discard&&g.discard.length?g.discard[g.discard.length-1]:null;
+  const disp=document.getElementById('empty-deck-discard-display');
+  disp.innerHTML='';
+  if(top){
+    const wrap=document.createElement('div');wrap.className='card-grid';
+    wrap.appendChild(mkCard(top));disp.appendChild(wrap);
+  }
+  document.getElementById('empty-pickup-btn').disabled=!top;
+  showScreen('s-empty-deck');
+}
+
+async function emptyDeckPickup(){
+  const g=lastGame;
+  if(!g.discard||g.discard.length===0)return;
+  const discard=[...g.discard];
+  const card=discard.pop();
+  const hand=[...g.hands[myId],card];
+  await update(gameRef,{
+    discard,[`hands/${myId}`]:hand,phase:'discard',
+    emptyDeckMode:false,emptyDeckTurnPlayer:-1,
+    lastAction:`${myName} picked up the discard.`,
+  });
+}
+
+async function emptyDeckEnd(){
+  const g=lastGame;
+  await endGameReveal(g,'The draw pile ran out — game over!');
+}
+
+// ── Post-discard
+function renderPostDiscard(g){
+  const next=g.players[nextActive(myId,g.eliminated||Array(g.players.length).fill(false),g.players.length)];
+  const eligible=!g.wrapCalled&&g.turnCounts[myId]>=2&&hasWrapEligibility(g.hands[myId]);
+  document.getElementById('post-discard-title').textContent='Your turn is done';
+  document.getElementById('post-discard-msg').textContent=eligible
+    ?`You can still call Wrap before ${next.name} draws.`
+    :`Pass — ${next.name} is up next.`;
+  document.getElementById('post-wrap-btn').style.display=eligible?'block':'none';
+  showScreen('s-post-discard');
+}
+
+async function callWrapPostDiscard(){
+  const g=lastGame;
+  if(g.wrapCalled||!hasWrapEligibility(g.hands[myId]))return;
+  const active=g.players.filter((_,i)=>!g.eliminated[i]).length;
+  await update(gameRef,{
+    wrapCalled:true,wrapCaller:myId,wrapTurnsLeft:active,
+    postDiscardWrapWindow:false,postDiscardPlayer:-1,
+    lastAction:`${myName} called Wrap!`,
+  });
+  await advanceTurn(g);
+}
+
+async function endMyTurn(){
+  const g=lastGame;
+  await update(gameRef,{postDiscardWrapWindow:false,postDiscardPlayer:-1});
+  await advanceTurn(g);
+}
+
+// ── Play screen
+function renderPlayScreen(g){
+  wrapCalledThisTurn=false;selectedCard=-1;
+  const infoBar=document.getElementById('info-bar');infoBar.innerHTML='';
+  const b1=document.createElement('span');b1.className='badge badge-blue';b1.textContent='Your turn';infoBar.appendChild(b1);
+  const b2=document.createElement('span');b2.className='badge badge-yellow';b2.textContent=`Turn ${g.turnCounts[myId]+1}`;infoBar.appendChild(b2);
+  if(g.lives){const b3=document.createElement('span');b3.className='badge badge-green';b3.innerHTML=`Lives: ${livesHTML(g.lives[myId])}`;infoBar.appendChild(b3);}
+  const wrapEl=document.createElement('span');
+  if(g.wrapCalled){wrapEl.className='badge badge-red';wrapEl.textContent='Wrap called';}
+  else if(!hasWrapEligibility(g.hands[myId])){wrapEl.className='badge badge-gray';wrapEl.textContent='Need set/straight to wrap';}
+  else if(g.turnCounts[myId]<2){wrapEl.className='badge badge-gray';wrapEl.textContent=`Wrap in ${3-g.turnCounts[myId]} turn(s)`;}
+  else{wrapEl.className='badge badge-green';wrapEl.textContent='Can call Wrap';}
+  infoBar.appendChild(wrapEl);
+
+  document.getElementById('notice-wrap').style.display=g.wrapCalled?'block':'none';
+  if(g.wrapCalled)document.getElementById('notice-wrap').textContent=`⚠ Wrap called by ${g.players[g.wrapCaller].name}! Everyone gets one final turn.`;
+  document.getElementById('locks-notice').style.display=g.locksActive?'block':'none';
+
+  const othersBar=document.getElementById('others-bar');othersBar.innerHTML='';
+  g.players.forEach((p,i)=>{
+    if(i===myId||(g.eliminated&&g.eliminated[i]))return;
+    const el=document.createElement('div');el.className='other-player';
+    el.innerHTML=`<span>${p.name}</span><span style="color:var(--text3);font-size:11px">${(g.hands[i]||[]).length} cards</span>${g.lives?livesHTML(g.lives[i]):''}`;
+    othersBar.appendChild(el);
+  });
+
+  const isDrawPhase=g.phase==='draw';
+  document.getElementById('phase-label').textContent=isDrawPhase?'Draw a card':'Discard a card';
+  document.getElementById('draw-hint').textContent=isDrawPhase?'Pick a source':'';
+  document.getElementById('draw-count').textContent=(g.deck||[]).length+' left';
+  document.getElementById('draw-btn').style.pointerEvents=isDrawPhase?'auto':'none';
+  document.getElementById('draw-btn').style.opacity=isDrawPhase?'1':'0.4';
+
+  const discardSlot=document.getElementById('discard-btn');
+  const top=g.discard&&g.discard.length?g.discard[g.discard.length-1]:null;
+  if(top&&isDrawPhase){
+    discardSlot.className='pile-slot has-card';
+    discardSlot.style.color=RED.has(top.suit)?'var(--card-red)':'var(--card-black)';
+    discardSlot.innerHTML=`<span class="c-rank" style="font-size:13px;font-weight:700">${top.rank}</span><span class="c-suit" style="font-size:18px">${top.suit}</span>`;
+    discardSlot.style.pointerEvents='auto';discardSlot.style.opacity='1';
+  } else {
+    discardSlot.className='pile-slot';discardSlot.style.color='var(--text3)';discardSlot.innerHTML='Empty';
+    discardSlot.style.pointerEvents='none';discardSlot.style.opacity='0.4';
+  }
+
+  renderHand(g);
+  document.getElementById('discard-card-btn').disabled=true;
+  const canWrap=!g.wrapCalled&&g.turnCounts[myId]>=2&&hasWrapEligibility(g.hands[myId])&&g.phase==='discard';
+  document.getElementById('wrap-btn').disabled=!canWrap;
+
+  const dcBtn=document.getElementById('dc-btn');
+  const dcUsed=g.deckCheckUsed[myId],dcOpen=deckCheckActiveThisTurn;
+  if(g.locksActive&&!dcOpen){dcBtn.disabled=true;dcBtn.textContent='Deck Check (locked)';}
+  else if(dcUsed&&!dcOpen){dcBtn.disabled=true;dcBtn.textContent='Deck Check (used)';}
+  else if(dcOpen){dcBtn.disabled=false;dcBtn.textContent='Deck Check (reopen)';}
+  else{dcBtn.disabled=false;dcBtn.textContent='Deck Check';}
+
+  const locksBtn=document.getElementById('locks-btn');
+  locksBtn.style.display=(!g.deckCheckUsed[myId]&&!g.locksCalled)?'inline-flex':'none';
+  document.getElementById('play-msg').textContent=g.lastAction||'';
+  showScreen('s-play');
+}
+
+function renderHand(g){
+  const hand=g.hands[myId]||[];
+  const grid=document.getElementById('hand-display');grid.innerHTML='';
+  const zeros=findZeros(hand);
+  document.getElementById('score-preview').textContent=`Score: ${cardScore(hand)} pts — green = 0 pts`;
+  const isDiscard=g.phase==='discard';
+  hand.forEach((c,i)=>{
+    const isSel=i===selectedCard,isZero=zeros.has(i);
+    const isLocked=isDiscard&&wrapCalledThisTurn&&!canDiscardAfterWrap(hand,i);
+    const el=mkCard(c,{zero:isZero&&!isSel,selected:isSel,locked:isLocked&&!isSel});
+    el.draggable=!isLocked;
+    el.onclick=()=>{
+      if(!isDiscard)return;
+      if(isLocked){document.getElementById('play-msg').textContent='Cannot discard — would break Wrap eligibility.';return;}
+      selectedCard=(selectedCard===i)?-1:i;renderHand(g);
+      document.getElementById('discard-card-btn').disabled=selectedCard===-1;
+    };
+    el.addEventListener('dragstart',e=>{if(isLocked){e.preventDefault();return;}dragSrcIdx=i;el.classList.add('dragging');e.dataTransfer.effectAllowed='move';});
+    el.addEventListener('dragend',()=>{el.classList.remove('dragging');grid.querySelectorAll('.playing-card').forEach(c=>c.classList.remove('drag-over'));});
+    el.addEventListener('dragover',e=>{e.preventDefault();el.classList.add('drag-over');});
+    el.addEventListener('dragleave',()=>el.classList.remove('drag-over'));
+    el.addEventListener('drop',e=>{
+      e.preventDefault();if(dragSrcIdx===i)return;
+      const h=[...lastGame.hands[myId]];const moved=h.splice(dragSrcIdx,1)[0];h.splice(i,0,moved);
+      if(selectedCard===dragSrcIdx)selectedCard=i;
+      else if(selectedCard>Math.min(dragSrcIdx,i)&&selectedCard<=Math.max(dragSrcIdx,i))selectedCard+=dragSrcIdx<i?-1:1;
+      dragSrcIdx=-1;update(gameRef,{[`hands/${myId}`]:h});
+    });
+    grid.appendChild(el);
+  });
+}
+
+async function drawFromDeck(){
+  const g=lastGame;
+  if(g.phase!=='draw'||g.currentPlayer!==myId)return;
+  if(!g.deck||g.deck.length===0){
+    await update(gameRef,{emptyDeckMode:true,emptyDeckTurnPlayer:myId,lastAction:'The draw pile is empty!'});return;
+  }
+  const deck=[...g.deck],card=deck.pop(),hand=[...g.hands[myId],card];
+  deckCheckActiveThisTurn=false;
+  const updates={deck,[`hands/${myId}`]:hand,phase:'discard',lastAction:`${myName} drew from the deck.`};
+  if(isRummy(hand)){updates.rummy={player:myId,announced:true,auto8:hand.length===8};updates.phase='rummy';}
+  await update(gameRef,updates);
+}
+
+async function takeDiscard(){
+  const g=lastGame;
+  if(g.phase!=='draw'||g.currentPlayer!==myId)return;
+  if(!g.discard||g.discard.length===0)return;
+  const discard=[...g.discard],card=discard.pop(),hand=[...g.hands[myId],card];
+  deckCheckActiveThisTurn=false;
+  const updates={discard,[`hands/${myId}`]:hand,phase:'discard',lastAction:`${myName} took the discard.`};
+  if(isRummy(hand)){updates.rummy={player:myId,announced:true,auto8:hand.length===8};updates.phase='rummy';}
+  await update(gameRef,updates);
+}
+
+async function doDiscard(){
+  const g=lastGame;if(selectedCard===-1)return;
+  const hand=[...g.hands[myId]];
+  if(wrapCalledThisTurn&&!canDiscardAfterWrap(hand,selectedCard)){document.getElementById('play-msg').textContent='Cannot discard — would break Wrap eligibility.';return;}
+  const discarded=hand.splice(selectedCard,1)[0];
+  const discard=[...g.discard,discarded];selectedCard=-1;
+  if(isRummy(hand)){
+    await update(gameRef,{[`hands/${myId}`]:hand,discard,rummy:{player:myId,announced:true,auto8:false},phase:'rummy',lastAction:`${myName} has Rummy!`});return;
+  }
+  const turnCounts=[...g.turnCounts];turnCounts[myId]++;
+  deckCheckActiveThisTurn=false;
+  await update(gameRef,{[`hands/${myId}`]:hand,discard,turnCounts,postDiscardWrapWindow:true,postDiscardPlayer:myId,phase:'post-discard',lastAction:`${myName} discarded.`});
+}
+
+async function advanceTurn(g){
+  const n=g.players.length;const elim=g.eliminated||Array(n).fill(false);
+  let wrapTurnsLeft=g.wrapTurnsLeft;
+  if(g.wrapCalled){
+    wrapTurnsLeft--;
+    if(wrapTurnsLeft<=0){await endGameReveal(g,`${g.players[g.wrapCaller].name} called Wrap!`);return;}
+  }
+  const next=nextActive(g.currentPlayer,elim,n);
+  await update(gameRef,{currentPlayer:next,phase:'draw',wrapTurnsLeft,lastAction:`${g.players[next].name}'s turn.`});
+}
+
+async function callWrap(){
+  const g=lastGame;
+  if(g.wrapCalled||g.turnCounts[myId]<2||!hasWrapEligibility(g.hands[myId]))return;
+  wrapCalledThisTurn=true;
+  const active=g.players.filter((_,i)=>!(g.eliminated&&g.eliminated[i])).length;
+  await update(gameRef,{wrapCalled:true,wrapCaller:myId,wrapTurnsLeft:active,lastAction:`${myName} called Wrap!`});
+  renderPlayScreen({...lastGame,wrapCalled:true,wrapCaller:myId});
+}
+
+async function openDeckCheck(){
+  const g=lastGame;
+  if(g.locksActive&&!deckCheckActiveThisTurn)return;
+  if(g.deckCheckUsed[myId]&&!deckCheckActiveThisTurn)return;
+  if(!deckCheckActiveThisTurn){
+    deckCheckActiveThisTurn=true;
+    const dcu=[...g.deckCheckUsed];dcu[myId]=true;
+    await update(gameRef,{deckCheckUsed:dcu,lastAction:`${myName} used a Deck Check.`});
+    document.getElementById('locks-btn').style.display='none';
+  }
+  const discard=g.discard||[],hand=g.hands[myId]||[],zeros=findZeros(hand);
+  document.getElementById('dc-pile-count').textContent=`${discard.length} card(s) in discard`;
+  const dGrid=document.getElementById('dc-discard-grid');dGrid.innerHTML='';
+  if(discard.length===0)dGrid.innerHTML='<p style="font-size:12px;color:var(--text3)">Empty</p>';
+  else[...discard].reverse().forEach(c=>dGrid.appendChild(mkCard(c)));
+  const hGrid=document.getElementById('dc-hand-grid');hGrid.innerHTML='';
+  hand.forEach((c,i)=>hGrid.appendChild(mkCard(c,{zero:zeros.has(i)})));
+  document.getElementById('dc-modal').classList.add('open');
+  document.getElementById('dc-btn').textContent='Deck Check (open)';
+}
+
+function closeDeckCheck(){document.getElementById('dc-modal').classList.remove('open');document.getElementById('dc-btn').textContent='Deck Check (reopen)';}
+
+async function callLocks(){
+  const g=lastGame;if(g.deckCheckUsed[myId]||g.locksCalled)return;
+  const dcu=[...g.deckCheckUsed];dcu[myId]=true;
+  await update(gameRef,{locksActive:true,locksCalled:true,deckCheckUsed:dcu,lastAction:`🔒 ${myName} called Locks — no more Deck Checks!`});
+}
+async function callLocksFromWaiting(){
+  await callLocks();
+  document.getElementById('waiting-locks-wrap').style.display='none';
+  document.getElementById('waiting-locks-msg').textContent='🔒 Locks called!';
+}
+
+function sortHand(mode){
+  const g=lastGame,hand=g.hands[myId];
+  const sorted=mode==='smart'?smartSort(hand):mode==='suit'?bySuitSort(hand):byRankSort(hand);
+  selectedCard=-1;update(gameRef,{[`hands/${myId}`]:sorted});
+}
+
+// ── Rummy
+function renderRummyScreen(g){
+  const r=g.rummy,pName=g.players[r.player].name;
+  document.getElementById('rummy-title').textContent=`🎉 Rummy — ${pName}!`;
+  const hand=g.hands[r.player]||[],zeros=findZeros(hand);
+  const grid=document.getElementById('rummy-hand');grid.innerHTML='';
+  hand.forEach((c,i)=>grid.appendChild(mkCard(c,{zero:zeros.has(i)})));
+  const actions=document.getElementById('rummy-actions');actions.innerHTML='';
+  if(r.auto8){
+    document.getElementById('rummy-msg').textContent=`${pName} connected all 8 cards — automatic winner!`;
+    if(myId===r.player||myId===0){
+      const btn=document.createElement('button');btn.className='btn btn-success btn-full';
+      btn.textContent=`Confirm — ${pName} wins!`;btn.onclick=()=>endGameRummy(g,r.player);actions.appendChild(btn);
+    } else actions.innerHTML=`<p style="color:var(--text3);font-size:13px">Waiting for ${pName} to confirm...</p>`;
+  } else {
+    document.getElementById('rummy-msg').textContent=`${pName} has Rummy! ${r.player===myId?'Discard to open steal window.':'Waiting for '+pName+' to discard...'}`;
+    if(r.player===myId){
+      const btn=document.createElement('button');btn.className='btn btn-primary btn-full';
+      btn.textContent='Discard & open steal window';btn.onclick=()=>rummyDiscard(g);actions.appendChild(btn);
+    }
+  }
+  showScreen('s-rummy');
+}
+
+async function rummyDiscard(g){
+  const hand=[...g.hands[myId]],zeros=findZeros(hand);
+  const nonZero=hand.map((_,i)=>i).filter(i=>!zeros.has(i));
+  const idx=nonZero.length>0?nonZero.reduce((b,i)=>RANK_VAL[hand[i].rank]>RANK_VAL[hand[b].rank]?i:b,nonZero[0]):0;
+  const discarded=hand.splice(idx,1)[0];
+  const discard=[...g.discard,discarded];
+  const turnCounts=[...g.turnCounts];turnCounts[myId]++;
+  const elim=g.eliminated||Array(g.players.length).fill(false);
+  const nextPlayer=nextActive(myId,elim,g.players.length);
+  await update(gameRef,{
+    [`hands/${myId}`]:hand,discard,turnCounts,
+    rummy:{...g.rummy,announced:false,stealPhase:true,discardedCard:discarded,stealCandidate:nextPlayer},
+    lastAction:`${myName} discarded ${discarded.rank}${discarded.suit}. ${g.players[nextPlayer].name}, can you steal?`,
+  });
+}
+
+async function endGameRummy(g,winner){
+  await update(gameRef,{status:'gameover',winner,rummy:null,lastAction:`${g.players[winner].name} wins by Rummy!`});
+}
+
+function renderStealScreen(g){
+  const r=g.rummy,card=r.discardedCard,sc=r.stealCandidate;
+  document.getElementById('steal-title').textContent=`${g.players[sc].name} — steal Rummy?`;
+  document.getElementById('steal-msg').textContent=`Does picking up the ${card.rank}${card.suit} give you Rummy?${myId!==sc?' Waiting for '+g.players[sc].name+'...':''}`;
+  const disp=document.getElementById('steal-card-display');disp.innerHTML='';disp.appendChild(mkCard(card));
+  document.getElementById('steal-yes-btn').disabled=myId!==sc;
+  document.querySelector('#s-steal .btn:last-child').disabled=myId!==sc;
+  showScreen('s-steal');
+}
+
+async function claimSteal(){
+  const g=lastGame,r=g.rummy;if(myId!==r.stealCandidate)return;
+  const card=r.discardedCard,test=[...g.hands[myId],card];
+  if(!isRummy(test)){alert("That doesn't actually give you Rummy!");return;}
+  const hand=[...test],zeros=findZeros(hand);
+  const nonZero=hand.map((_,i)=>i).filter(i=>!zeros.has(i));
+  const idx=nonZero.length>0?nonZero[0]:0;
+  const discard=[...g.discard];discard.pop();
+  const discarded=hand.splice(idx,1)[0];discard.push(discarded);
+  const turnCounts=[...g.turnCounts];turnCounts[myId]++;
+  await update(gameRef,{[`hands/${myId}`]:hand,discard,turnCounts,rummy:null,status:'gameover',winner:myId,lastAction:`${myName} stole Rummy! 🎉`});
+}
+
+async function declineSteal(){
+  const g=lastGame;if(myId!==g.rummy.stealCandidate)return;
+  await endGameReveal(g,`${g.players[g.rummy.player].name} had Rummy — no steal.`);
+}
+
+async function endGameReveal(g,reason){
+  await update(gameRef,{status:'gameover',winner:null,lastAction:reason,endReason:reason});
+}
+
+// ── Game over
+function renderGameOver(g){
+  document.getElementById('reveal-reason').textContent=g.endReason||g.lastAction||'Game over';
+  const handsDiv=document.getElementById('reveal-hands');handsDiv.innerHTML='';
+  const scores=g.players.map((p,i)=>({name:p.name,score:g.winner===i?0:cardScore(g.hands[i]||[]),i,eliminated:g.eliminated&&g.eliminated[i]}));
+  const activePlayers=scores.filter(s=>!s.eliminated);
+  const min=Math.min(...activePlayers.map(s=>s.score));
+  const max=Math.max(...activePlayers.map(s=>s.score));
+  const isLivesMode=g.mode==='lives';
+
+  // Determine winners and losers
+  let winnerIdx=-1,loserIndices=[];
+  if(g.winner!==null){winnerIdx=g.winner;}
+  else if(isLivesMode){
+    // Highest score loses a life (or all if rummy)
+    loserIndices=activePlayers.filter(s=>s.score===max).map(s=>s.i);
+    const minScorers=activePlayers.filter(s=>s.score===min);
+    if(minScorers.length===1)winnerIdx=minScorers[0].i;
+  } else {
+    const minScorers=activePlayers.filter(s=>s.score===min);
+    if(minScorers.length===1)winnerIdx=minScorers[0].i;
+  }
+
+  // Update lives if lives mode
+  let newLives=g.lives?[...g.lives]:null;
+  let newEliminated=g.eliminated?[...g.eliminated]:Array(g.players.length).fill(false);
+  if(isLivesMode&&newLives&&g.winner===null){
+    // Rummy case handled by winner field
+    loserIndices.forEach(i=>{if(!newEliminated[i]){newLives[i]=Math.max(0,newLives[i]-1);if(newLives[i]===0)newEliminated[i]=true;}});
+  } else if(isLivesMode&&newLives&&g.winner!==null){
+    // Rummy — all others lose a life
+    g.players.forEach((_,i)=>{if(i!==g.winner&&!newEliminated[i]){newLives[i]=Math.max(0,newLives[i]-1);if(newLives[i]===0)newEliminated[i]=true;}});
+    loserIndices=g.players.map((_,i)=>i).filter(i=>i!==g.winner);
+  }
+
+  g.players.forEach((p,i)=>{
+    const hand=g.hands[i]||[],zeros=findZeros(hand),score=scores[i].score;
+    const isW=i===winnerIdx,isL=loserIndices.includes(i);
+    const sec=document.createElement('div');sec.style.marginBottom='1rem';
+    let lifeStr=newLives?` — ${newLives[i]} life${newLives[i]!==1?'ves':''} remaining`:'';
+    sec.innerHTML=`<p style="font-size:13px;font-weight:600;margin-bottom:4px;color:${isW?'var(--green)':isL?'var(--red)':'var(--text2)'}">${p.name} — ${score} pts${isW?' 🏆':isL?' 💀':''}${lifeStr}</p>`;
+    const grid=document.createElement('div');grid.className='card-grid';
+    hand.forEach((c,ci)=>grid.appendChild(mkCard(c,{zero:zeros.has(ci)})));
+    sec.appendChild(grid);handsDiv.appendChild(sec);
+  });
+
+  if(g.deck&&g.deck.length>0){
+    const deckDiv=document.getElementById('reveal-deck');deckDiv.innerHTML='';
+    deckDiv.innerHTML=`<p style="font-size:13px;color:var(--text3);margin-bottom:4px">Remaining draw pile (${g.deck.length} cards)</p>`;
+    const grid=document.createElement('div');grid.className='card-grid';
+    [...g.deck].reverse().forEach(c=>grid.appendChild(mkCard(c)));deckDiv.appendChild(grid);
+  }
+
+  const tbl=document.getElementById('reveal-scores');tbl.innerHTML='<tr><th>Player</th><th>Score</th><th></th></tr>';
+  scores.forEach(s=>{
+    const tr=document.createElement('tr');
+    const isW=s.i===winnerIdx,isL=loserIndices.includes(s.i);
+    if(isW)tr.className='winner';else if(isL)tr.className='loser';
+    tr.innerHTML=`<td>${s.name}</td><td>${s.score} pts</td><td>${isW?'🏆 Winner':isL?'💀 Lost a life':''}</td>`;
+    tbl.appendChild(tr);
+  });
+
+  // Check if match is over in lives mode
+  const stillAlive=newEliminated.filter(e=>!e).length;
+  const matchWinner=newEliminated.findIndex((e,i)=>!e&&newEliminated.filter((_,j)=>j!==i&&!newEliminated[j]).length===0);
+
+  const actionsDiv=document.getElementById('reveal-actions');actionsDiv.innerHTML='';
+  const livesDiv=document.getElementById('lives-remaining');
+  if(isLivesMode&&newLives){
+    livesDiv.style.display='block';
+    livesDiv.innerHTML='<h3 style="margin-bottom:.5rem">Lives remaining</h3>';
+    g.players.forEach((p,i)=>{
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:13px;';
+      row.innerHTML=`<span style="min-width:100px;color:${newEliminated[i]?'var(--text3)':'var(--text)'}">${p.name}${newEliminated[i]?' (eliminated)':''}</span>${livesHTML(newLives[i])}`;
+      livesDiv.appendChild(row);
+    });
+  } else livesDiv.style.display='none';
+
+  if(isLivesMode&&stillAlive<=1){
+    // Match over
+    const overBtn=document.createElement('button');overBtn.className='btn btn-success btn-full';
+    const mw=newEliminated.findIndex(e=>!e);
+    overBtn.textContent=mw>=0?`${g.players[mw].name} wins the match! 🏆`:'Match over!';
+    actionsDiv.appendChild(overBtn);
+  } else if(myId===0){
+    const nextBtn=document.createElement('button');nextBtn.className='btn btn-primary btn-full';
+    nextBtn.textContent=isLivesMode?'Next round':'Play again';
+    nextBtn.onclick=()=>playAgain(newLives,newEliminated);
+    actionsDiv.appendChild(nextBtn);
+  } else {
+    actionsDiv.innerHTML=`<p style="font-size:13px;color:var(--text3)">Waiting for host to start next round...</p>`;
+  }
+
+  showScreen('s-reveal');
+}
+
+async function playAgain(newLives,newEliminated){
+  const g=lastGame;
+  const elim=newEliminated||g.eliminated||Array(g.players.length).fill(false);
+  const scores=g.players.map((p,i)=>({i,score:g.winner===i?0:cardScore(g.hands[i]||[])}));
+  const min=Math.min(...scores.filter((_,i)=>!elim[i]).map(s=>s.score));
+
+  // Determine next dealer — shift left from current dealer ignoring eliminated
+  const n=g.players.length;
+  let nextDealer=g.dealer;
+  do{nextDealer=(nextDealer+1)%n;}while(elim[nextDealer]);
+
+  deckCheckActiveThisTurn=false;wrapCalledThisTurn=false;
+
+  // Reset game for next round, preserving lives and eliminated
+  const deck=buildDeck();
+  const hands=Array.from({length:n},()=>[]);
+  for(let r=0;r<7;r++)for(let p=0;p<n;p++)if(!elim[p])hands[p].push(deck.pop());else hands[p]=[];
+  hands.forEach((h,i)=>{if(h.length)hands[i]=smartSort(h);});
+  const discard=[deck.pop()];
+  const firstPlayer=nextActive(nextDealer,elim,n);
+
+  await update(gameRef,{
+    status:'playing',deck,discard,hands,
+    turnCounts:Array(n).fill(0),
+    currentPlayer:firstPlayer,dealer:nextDealer,
+    wrapCalled:false,wrapCaller:-1,wrapTurnsLeft:-1,
+    deckCheckUsed:Array(n).fill(false),
+    locksActive:false,locksCalled:false,
+    phase:'draw',postDiscardWrapWindow:false,postDiscardPlayer:-1,
+    rummy:null,winner:null,endReason:null,
+    lives:newLives||g.lives,
+    eliminated:elim,
+    emptyDeckMode:false,emptyDeckTurnPlayer:-1,
+    lastAction:`New round! ${g.players[firstPlayer].name} goes first.`,
+  });
+}
+
+</script>
+</body>
+</html>
